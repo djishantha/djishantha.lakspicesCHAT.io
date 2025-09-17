@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LAKSPICES — Admin</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif; margin:20px;}
+  .row{display:flex; gap:12px; margin-bottom:8px;}
+  label{font-size:13px;}
+  input[type="text"], input[type="number"], textarea{width:100%; padding:6px; border-radius:6px; border:1px solid #ddd;}
+  .grid{display:grid; grid-template-columns: 1fr 120px; gap:12px; margin-top:12px;}
+  button{padding:8px 10px;}
+  .small{font-size:13px;color:#555;}
+  table{width:100%; border-collapse:collapse; margin-top:12px;}
+  th,td{border:1px solid #eee; padding:8px; text-align:left;}
+  .actions{display:flex; gap:6px;}
+</style>
+</head>
+<body>
+  <h1>LAKSPICES — Admin</h1>
+  <div class="small">Edit your product list here. Use "Export JSON" to download a file you can commit into your GitHub Pages repo (replace `products.json`). You can also import an existing `products.json` file to edit.</div>
+
+  <div style="margin-top:14px;">
+    <input type="file" id="fileInput" accept=".json"/>
+    <button id="loadDefault">Load products.json (from server)</button>
+    <button id="newProduct">Add new product</button>
+    <button id="exportJson">Export JSON</button>
+    <button id="clearLocal">Clear local edits</button>
+    <a href="index.html"><button>Back to Shop</button></a>
+  </div>
+
+  <table id="table">
+    <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Stock</th><th>SKU</th><th>Image URL</th><th>Actions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+<script>
+let products = [];
+let nextId = 1;
+
+document.getElementById('fileInput').addEventListener('change', ev=>{
+  const f = ev.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try{ products = JSON.parse(e.target.result); finishLoad(); } catch(err){ alert('Invalid JSON'); }
+  };
+  r.readAsText(f);
+});
+
+document.getElementById('loadDefault').addEventListener('click', async ()=>{
+  try{
+    const res = await fetch('./products.json', {cache:'no-cache'});
+    if(!res.ok) throw new Error('products.json not found');
+    products = await res.json(); finishLoad();
+  }catch(e){ alert('Failed to load products.json: '+e.message); }
+});
+
+document.getElementById('exportJson').addEventListener('click', ()=> {
+  const data = JSON.stringify(products, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'products.json'; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById('newProduct').addEventListener('click', ()=>{
+  const p = { id: nextId++, sku: 'SKU-' + Date.now(), name: 'New spice', description:'', price_cents: 500, image_url:'', stock: 10 };
+  products.unshift(p); renderTable();
+});
+
+document.getElementById('clearLocal').addEventListener('click', ()=>{
+  if(confirm('Clear local edits (localStorage) ?')) {
+    localStorage.removeItem('lakspices_products');
+    alert('Local edits cleared. Reload to get products.json from repo.');
+  }
+});
+
+function finishLoad(){
+  // normalize ids and nextId
+  products = products.map((p,i)=>({ id: p.id || (i+1), sku: p.sku||('SKU-'+(i+1)), name: p.name||'Untitled', description: p.description||'', price_cents: p.price_cents||100, image_url:p.image_url||'', stock: p.stock||0 }));
+  nextId = Math.max( (products.map(p=>p.id).reduce((a,b)=>Math.max(a,b),0) || 0) + 1, nextId );
+  // also save to localStorage for index.html to pick up
+  localStorage.setItem('lakspices_products', JSON.stringify(products));
+  renderTable();
+}
+
+function renderTable(){
+  const tbody = document.querySelector('#table tbody'); tbody.innerHTML = '';
+  for(const p of products){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.id}</td>
+      <td><input data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}"></td>
+      <td><input data-id="${p.id}" data-field="price_cents" value="${p.price_cents}"></td>
+      <td><input data-id="${p.id}" data-field="stock" value="${p.stock}"></td>
+      <td><input data-id="${p.id}" data-field="sku" value="${escapeHtml(p.sku)}"></td>
+      <td><input data-id="${p.id}" data-field="image_url" value="${escapeHtml(p.image_url)}"></td>
+      <td class="actions">
+        <button data-action="save" data-id="${p.id}">Save</button>
+        <button data-action="del" data-id="${p.id}">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
+  }
+
+  // wire inputs/buttons
+  tbody.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('change', ev=>{
+      const id = Number(ev.target.dataset.id); const f = ev.target.dataset.field;
+      const p = products.find(x=>x.id===id); if(!p) return;
+      if(f==='price_cents' || f==='stock'){ p[f] = Number(ev.target.value)||0; } else p[f]=ev.target.value;
+      localStorage.setItem('lakspices_products', JSON.stringify(products));
+    });
+  });
+  tbody.querySelectorAll('button[data-action]').forEach(btn=>{
+    btn.addEventListener('click', ev=>{
+      const id = Number(ev.target.dataset.id); const act = ev.target.dataset.action;
+      if(act==='del'){ products = products.filter(x=>x.id!==id); localStorage.setItem('lakspices_products', JSON.stringify(products)); renderTable(); }
+      if(act==='save'){ localStorage.setItem('lakspices_products', JSON.stringify(products)); alert('Saved to localStorage. Export JSON to commit to repo.'); }
+    });
+  });
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+// try to load products.json into localStorage on page open so index.html can use edits
+(async function tryLoadDefault(){
+  try{
+    const r = await fetch('./products.json', {cache:'no-cache'});
+    if(r.ok){
+      const arr = await r.json();
+      products = arr.map((p,i)=>({ id: p.id || (i+1), sku: p.sku||('SKU-'+(i+1)), name: p.name||'Untitled', description: p.description||'', price_cents: p.price_cents||100, image_url:p.image_url||'', stock: p.stock||0 }));
+      nextId = Math.max((products.map(p=>p.id).reduce((a,b)=>Math.max(a,b),0) || 0) + 1, nextId);
+      localStorage.setItem('lakspices_products', JSON.stringify(products));
+      renderTable();
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
