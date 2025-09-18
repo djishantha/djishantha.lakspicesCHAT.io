@@ -4,9 +4,10 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>LAKSPICES LLC — Shop</title>
+
 <style>
   :root{
-    --card-pad:12px; --cols:3; /* changed to 3 columns */
+    --card-pad:12px; --cols:3;
     --page-width:1200px;
   }
   body{font-family:Inter, system-ui, Arial, sans-serif; margin:20px; display:flex; justify-content:center;}
@@ -33,61 +34,63 @@
   .cart-item{display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed #eee;}
   .small{font-size:13px; color:#555;}
   .pager{margin-top:18px; display:flex; gap:8px; align-items:center; justify-content:center;}
-  .footer-note{margin-top:14px; font-size:13px; color:#666;}
   .page-size{width:70px;}
   @media (max-width:1000px){
     .grid{grid-template-columns: repeat(1,1fr);}
     .cart{position:static; width:auto; margin-top:12px; max-height:none;}
   }
 </style>
+
+<!-- PayPal SDK -->
+<script src="https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD"></script>
+
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Welcome to LAKSPICES LLC</h1>
-    </header>
+<div class="wrap">
+  <header>
+    <h1>Welcome to LAKSPICES LLC</h1>
+  </header>
 
-    <div class="controls">
-      <label class="small">Rows per page:
-        <select id="rowsPerPage">
-          <option value="5">5</option><option value="10">10</option><option value="20">20</option>
-          <option value="25" selected>25</option><option value="50">50</option>
-        </select>
-      </label>
+  <div class="controls">
+    <label class="small">Rows per page:
+      <select id="rowsPerPage">
+        <option value="5">5</option><option value="10">10</option><option value="20">20</option>
+        <option value="25" selected>25</option><option value="50">50</option>
+      </select>
+    </label>
 
-      <label class="small">Search:
-        <input id="search" placeholder="name or desc" />
-      </label>
-    </div>
-
-    <main>
-      <div id="grid" class="grid" aria-live="polite"></div>
-
-      <div class="pager" id="pager">
-        <button id="prev">Prev</button>
-        <div id="pageInfo" class="small"></div>
-        <button id="next">Next</button>
-      </div>
-    </main>
-
-    <div class="cart" id="cart">
-      <h3>Cart (<span id="itemCount">0</span> items)</h3>
-      <div class="cart-list" id="cartList"></div>
-      <div id="total" class="small" style="font-weight:800;margin-bottom:8px"></div>
-
-      <!-- Checkout button + PayPal -->
-      <button id="checkoutBtn" class="primary" style="width:100%; margin-bottom:10px;">Checkout</button>
-      <div id="paypal-buttons"></div>
-
-      <div style="margin-top:8px; display:flex; gap:8px;">
-        <button id="clearCart">Clear</button>
-        <button id="exportCart">Export Order</button>
-      </div>
-    </div>
+    <label class="small">Search:
+      <input id="search" placeholder="name or desc" />
+    </label>
   </div>
 
+  <main>
+    <div id="grid" class="grid" aria-live="polite"></div>
+
+    <div class="pager" id="pager">
+      <button id="prev">Prev</button>
+      <div id="pageInfo" class="small"></div>
+      <button id="next">Next</button>
+    </div>
+  </main>
+
+  <div class="cart" id="cart">
+    <h3>Cart (<span id="itemCount">0</span> items)</h3>
+    <div class="cart-list" id="cartList"></div>
+    <div id="total" class="small" style="font-weight:800;margin-bottom:8px"></div>
+
+    <!-- Checkout button + PayPal -->
+    <button id="checkoutBtn" class="primary" style="width:100%; margin-bottom:10px;">Checkout</button>
+    <div id="paypal-buttons"></div>
+
+    <div style="margin-top:8px; display:flex; gap:8px;">
+      <button id="clearCart">Clear</button>
+      <button id="exportCart">Export Order</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const PAYPAL_CLIENT_ID = 'https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD';
 const PRODUCTS_FILE = './products.json'; 
 const COLS = 3;
 
@@ -97,15 +100,13 @@ let page = 1;
 let rows = 25; 
 let cart = loadCart();
 
+/* ============ Init ============ */
 document.getElementById('rowsPerPage').value = rows;
-document.getElementById('rowsPerPage').addEventListener('change', e=>{
-  rows = parseInt(e.target.value,10);
-  page = 1; render();
-});
-document.getElementById('search').addEventListener('input', ()=>{ page = 1; render(); });
+document.getElementById('rowsPerPage').addEventListener('change', e=>{ rows=parseInt(e.target.value); page=1; render(); });
+document.getElementById('search').addEventListener('input', ()=>{ page=1; render(); });
 document.getElementById('prev').addEventListener('click', ()=>{ if(page>1) page--; render(); });
 document.getElementById('next').addEventListener('click', ()=>{ page++; render(); });
-document.getElementById('clearCart').addEventListener('click', ()=>{ cart = []; saveCart(); renderCart(); });
+document.getElementById('clearCart').addEventListener('click', ()=>{ cart=[]; saveCart(); renderCart(); });
 document.getElementById('exportCart').addEventListener('click', exportOrder);
 document.getElementById('checkoutBtn').addEventListener('click', ()=>{ 
   if(cart.length===0) return alert("Cart empty!");
@@ -114,8 +115,9 @@ document.getElementById('checkoutBtn').addEventListener('click', ()=>{
 
 fetchProducts();
 
+/* ============ Functions ============ */
 async function fetchProducts(){
-  try{
+  try{ 
     const res = await fetch(PRODUCTS_FILE, {cache:'no-cache'});
     products = res.ok ? await res.json() : [];
   }catch(e){ products=[]; }
@@ -144,8 +146,8 @@ function render(){
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
   for(const p of pageItems){
-    const card = document.createElement('div'); card.className = 'card';
-    card.innerHTML = `
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML=`
       <img loading="lazy" src="${p.image_url || 'https://via.placeholder.com/400x260?text=No+Image'}" alt="${escapeHtml(p.name||'')}">
       <div class="meta">
         <div class="title">${escapeHtml(p.name||'Unnamed')}</div>
@@ -166,30 +168,27 @@ function render(){
   document.getElementById('next').disabled = page >= maxPage;
 }
 
-/* Cart functions */
+/* ============ Cart ============ */
 function loadCart(){ try{ return JSON.parse(localStorage.getItem('lakspices_cart')||'[]'); }catch(e){ return []; } }
 function saveCart(){ localStorage.setItem('lakspices_cart', JSON.stringify(cart)); }
 function addToCart(id){
-  const p = products.find(x=>x.id===id); if(!p) return;
-  if(p.stock <= 0) return;
-  const it = cart.find(c=>c.id===id);
-  if(it){ if(it.qty+1 > p.stock) return; it.qty++; } 
-  else cart.push({id:id, name:p.name, price_cents:p.price_cents, qty:1});
+  const p=products.find(x=>x.id===id); if(!p) return; if(p.stock<=0) return;
+  const it=cart.find(c=>c.id===id); if(it){ if(it.qty+1>p.stock) return; it.qty++; } else cart.push({id:id, name:p.name, price_cents:p.price_cents, qty:1});
   saveCart(); renderCart();
 }
-function incQty(id){ const it = cart.find(c=>c.id===id); if(!it) return; const p = products.find(x=>x.id===id); if(it.qty+1 > p.stock) return; it.qty++; saveCart(); renderCart(); }
-function decQty(id){ const it = cart.find(c=>c.id===id); if(!it) return; it.qty--; if(it.qty<=0) cart = cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
-function removeItem(id){ cart = cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
+function incQty(id){ const it=cart.find(c=>c.id===id); if(!it) return; const p=products.find(x=>x.id===id); if(it.qty+1>p.stock) return; it.qty++; saveCart(); renderCart(); }
+function decQty(id){ const it=cart.find(c=>c.id===id); if(!it) return; it.qty--; if(it.qty<=0) cart=cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
+function removeItem(id){ cart=cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
 
 function renderCart(){
-  const elm = document.getElementById('cartList'); elm.innerHTML = '';
-  let totalCents = 0, itemCount = 0;
+  const elm=document.getElementById('cartList'); elm.innerHTML='';
+  let totalCents=0, itemCount=0;
   for(const it of cart){
-    const row = document.createElement('div'); row.className='cart-item';
-    const p = products.find(x=>x.id===it.id) || {};
-    totalCents += (it.price_cents||p.price_cents||0) * it.qty;
-    itemCount += it.qty;
-    row.innerHTML = `
+    const row=document.createElement('div'); row.className='cart-item';
+    const p=products.find(x=>x.id===it.id) || {};
+    totalCents+=(it.price_cents||p.price_cents||0)*it.qty;
+    itemCount+=it.qty;
+    row.innerHTML=`
       <div style="flex:1">
         <div style="font-weight:700">${escapeHtml(it.name)}</div>
         <div class="small">${it.qty} × $${((it.price_cents||p.price_cents)/100).toFixed(2)}</div>
@@ -204,63 +203,45 @@ function renderCart(){
     `;
     elm.appendChild(row);
   }
-  document.getElementById('total').textContent = 'Total: $' + (totalCents/100).toFixed(2);
-  document.getElementById('itemCount').textContent = itemCount;
+  document.getElementById('total').textContent='Total: $'+(totalCents/100).toFixed(2);
+  document.getElementById('itemCount').textContent=itemCount;
 }
 
-/* Export order */
+/* ============ Export Order ============ */
 function exportOrder(){
   if(cart.length===0) return alert('Cart empty');
-  const payload = { date: new Date().toISOString(), items: cart, total_cents: cart.reduce((s,i)=>s+(i.price_cents*i.qty),0) };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download = `lakspices-order-${Date.now()}.json`; a.click();
+  const payload={date:new Date().toISOString(), items:cart, total_cents:cart.reduce((s,i)=>s+(i.price_cents*i.qty),0)};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`lakspices-order-${Date.now()}.json`; a.click();
   URL.revokeObjectURL(url);
 }
 
-/* PayPal Smart Buttons */
+/* ============ PayPal Checkout ============ */
 function renderPayPalButtons(){
-  const container = document.getElementById('paypal-buttons');
-  container.innerHTML = '';
-  if(!PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID.includes('YOUR')) {
-    container.innerHTML = '<div class="small" style="color:#a00">Set your PAYPAL_CLIENT_ID to enable checkout.</div>';
-    return;
-  }
-  if(!window.paypal){
-    const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&components=buttons,hosted-fields`;
-    script.onload = () => renderPayPalButtons();
-    document.head.appendChild(script);
-    return;
-  }
-  const items = cart.map(it=>{
-    const p = products.find(x=>x.id===it.id) || {};
-    return {
-      name: p.name || it.name,
-      unit_amount: { currency_code: 'USD', value: ((it.price_cents||p.price_cents)/100).toFixed(2) },
-      quantity: String(it.qty)
-    };
+  const container=document.getElementById('paypal-buttons'); container.innerHTML='';
+  if(cart.length===0) return;
+  const items=cart.map(it=>{
+    const p=products.find(x=>x.id===it.id)||{};
+    return { name:p.name||it.name, unit_amount:{currency_code:'USD', value:((it.price_cents||p.price_cents)/100).toFixed(2)}, quantity:String(it.qty) };
   });
-  const total = items.reduce((s,i)=> s + (parseFloat(i.unit_amount.value) * parseInt(i.quantity)), 0).toFixed(2);
+  const total=items.reduce((s,i)=>s+(parseFloat(i.unit_amount.value)*parseInt(i.quantity)),0).toFixed(2);
 
-  window.paypal.Buttons({
-    style:{ layout:'vertical', color:'gold', shape:'rect', label:'paypal' },
-    createOrder:(data, actions)=>{
-      return actions.order.create({
-        purchase_units:[{
-          amount:{ currency_code:'USD', value:total, breakdown:{ item_total:{ currency_code:'USD', value:total } } },
-          items
-        }]
-      });
-    },
+  paypal.Buttons({
+    style:{layout:'vertical', color:'gold', shape:'rect', label:'paypal'},
+    createOrder:(data, actions)=> actions.order.create({ purchase_units:[{ amount:{ currency_code:'USD', value:total, breakdown:{item_total:{currency_code:'USD', value:total}} }, items }] }),
     onApprove:(data, actions)=> actions.order.capture().then(details=>{
-      cart=[]; saveCart(); renderCart(); render();
-      alert('Payment successful: ' + details.id);
-    })
+      // Reduce stock locally
+      for(const it of cart){ const p=products.find(x=>x.id===it.id); if(p) p.stock=Math.max(0,p.stock-it.qty); }
+      localStorage.setItem('lakspices_products', JSON.stringify(products));
+      cart=[]; saveCart(); render(); renderCart();
+      alert('Payment successful: '+details.id);
+    }),
+    onError: err=>{ console.error(err); alert('PayPal error: '+err); }
   }).render('#paypal-buttons');
 }
 
-function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+/* ============ Utils ============ */
+function escapeHtml(s){ return (s+'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 </script>
 </body>
 </html>
