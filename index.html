@@ -88,17 +88,15 @@
   <script src="https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD"></script>
 
   <script>
-    const perPage = 200;
-    let products = [];
-    const cart = [];
+    // --- Static product list (expand this to 200 spices) ---
+    let products = [
+      {id:1, name:"Red Chilies", description:"Hot dried red chilies", price_cents:299, stock:10, image_url:"https://via.placeholder.com/200?text=Red+Chilies"},
+      {id:2, name:"Cardamom", description:"Green cardamom pods", price_cents:499, stock:8, image_url:"https://via.placeholder.com/200?text=Cardamom"},
+      {id:3, name:"Black Pepper", description:"Whole black peppercorns", price_cents:399, stock:15, image_url:"https://via.placeholder.com/200?text=Black+Pepper"},
+      {id:4, name:"Cinnamon", description:"Ceylon cinnamon sticks", price_cents:599, stock:5, image_url:"https://via.placeholder.com/200?text=Cinnamon"}
+    ];
 
-    async function load(){
-      const res = await fetch(`/api/products?perPage=${perPage}`);
-      const data = await res.json();
-      products = data.products;
-      renderGrid();
-      renderCart();
-    }
+    const cart = [];
 
     function renderGrid(){
       const grid = document.getElementById('grid');
@@ -107,7 +105,7 @@
         const el = document.createElement('div'); 
         el.className='card';
         el.innerHTML = `
-          <img src="${p.image_url||'https://via.placeholder.com/300x180?text=No+Image'}" alt="${p.name}">
+          <img src="${p.image_url}" alt="${p.name}">
           <h4>${p.name}</h4>
           <div>${p.description||''}</div>
           <div class="price">$${(p.price_cents/100).toFixed(2)}</div>
@@ -162,34 +160,22 @@
       renderCart(); 
     }
 
-    // PayPal Smart Buttons integration
+    // --- PayPal Smart Buttons (client-side only demo) ---
     paypal.Buttons({
-      createOrder: async () => {
-        if(cart.length===0){ alert("Cart empty"); throw new Error("Cart empty"); }
-        const cartForServer = cart.map(i=>({id:i.id, qty:i.qty}));
-        const res = await fetch('/api/create-order', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({cart: cartForServer, currency:'USD'})
+      createOrder: (data, actions) => {
+        let total = 0;
+        for(const it of cart){ total += it.price_cents * it.qty; }
+        return actions.order.create({
+          purchase_units: [{
+            amount: { value: (total/100).toFixed(2) }
+          }]
         });
-        const orderData = await res.json();
-        if(!res.ok){ alert("Error creating order"); throw new Error(orderData.error); }
-        return orderData.id;
       },
-      onApprove: async (data) => {
-        const cartForServer = cart.map(i=>({id:i.id, qty:i.qty}));
-        const res = await fetch('/api/capture-order', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({orderID: data.orderID, cart: cartForServer})
-        });
-        const capData = await res.json();
-        if(res.ok){
-          alert("Payment successful! Thank you.");
-          cart.length = 0;
-          renderCart();
-          load(); // refresh stock
-        } else {
-          alert("Capture failed: " + capData.error);
-        }
+      onApprove: async (data, actions) => {
+        const order = await actions.order.capture();
+        alert("Payment successful! Thank you " + order.payer.name.given_name);
+        cart.length = 0;
+        renderCart();
       },
       onError: (err) => {
         console.error(err);
@@ -200,7 +186,8 @@
     window.inc = inc; 
     window.dec = dec;
 
-    load();
+    renderGrid();
+    renderCart();
   </script>
 </body>
 </html>
