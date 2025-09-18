@@ -6,14 +6,14 @@
 <title>LAKSPICES LLC — Shop</title>
 <style>
   :root{
-    --card-pad:12px; --cols:4;
+    --card-pad:12px; --cols:3; /* changed to 3 columns */
     --page-width:1200px;
   }
   body{font-family:Inter, system-ui, Arial, sans-serif; margin:20px; display:flex; justify-content:center;}
   .wrap{max-width:var(--page-width); width:100%;}
-  header{display:flex; align-items:center; justify-content:space-between;}
-  h1{margin:0 0 12px 0; font-size:24px;}
-  .controls{display:flex; gap:8px; align-items:center;}
+  header{text-align:center; margin-bottom:16px;}
+  h1{margin:0 0 12px 0; font-size:26px;}
+  .controls{display:flex; gap:8px; align-items:center; justify-content:center; margin-bottom:10px;}
   .grid{display:grid; grid-template-columns: repeat(var(--cols), 1fr); gap:16px; margin-top:18px;}
   .card{border:1px solid #e6e6e6;border-radius:8px;padding:var(--card-pad); background:#fff; display:flex;flex-direction:column; height:100%;}
   .card img{width:100%; height:160px; object-fit:cover; border-radius:6px;}
@@ -27,39 +27,38 @@
   button{cursor:pointer; padding:8px 10px; border-radius:6px; border:1px solid #ccc; background:#f7f7f7;}
   button.primary{background:#1a73e8; color:white; border-color:#1669c1;}
   button:disabled{opacity:0.5; cursor:not-allowed;}
-  .cart{position:fixed; right:20px; top:20px; width:300px; border:1px solid #e6e6e6; padding:12px; background:white; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.06);}
+  .cart{position:fixed; right:20px; top:20px; width:320px; border:1px solid #e6e6e6; padding:12px; background:white; border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.06); max-height:90vh; overflow-y:auto;}
   .cart h3{margin:0 0 8px 0;}
-  .cart-list{max-height:330px; overflow:auto; margin-bottom:8px;}
+  .cart-list{max-height:280px; overflow:auto; margin-bottom:8px;}
   .cart-item{display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed #eee;}
   .small{font-size:13px; color:#555;}
   .pager{margin-top:18px; display:flex; gap:8px; align-items:center; justify-content:center;}
   .footer-note{margin-top:14px; font-size:13px; color:#666;}
   .page-size{width:70px;}
-  @media (max-width:1000px){ .grid{grid-template-columns: repeat(2,1fr);} .cart{position:static; width:auto; margin-top:12px;} }
+  @media (max-width:1000px){
+    .grid{grid-template-columns: repeat(1,1fr);}
+    .cart{position:static; width:auto; margin-top:12px; max-height:none;}
+  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div>
-        <h1>LAKSPICES LLC — Spices Store</h1>
-        <div class="footer-note">Grid: 4 items per row. Adjust rows/page below.</div>
-      </div>
-
-      <div class="controls">
-        <label class="small">Rows per page:
-          <select id="rowsPerPage">
-            <option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25" selected>25</option><option value="50">50</option>
-          </select>
-        </label>
-
-        <label class="small">Search:
-          <input id="search" placeholder="name or desc" />
-        </label>
-
-        <a href="admin.html"><button>Admin</button></a>
-      </div>
+      <h1>Welcome to LAKSPICES LLC</h1>
     </header>
+
+    <div class="controls">
+      <label class="small">Rows per page:
+        <select id="rowsPerPage">
+          <option value="5">5</option><option value="10">10</option><option value="20">20</option>
+          <option value="25" selected>25</option><option value="50">50</option>
+        </select>
+      </label>
+
+      <label class="small">Search:
+        <input id="search" placeholder="name or desc" />
+      </label>
+    </div>
 
     <main>
       <div id="grid" class="grid" aria-live="polite"></div>
@@ -72,97 +71,66 @@
     </main>
 
     <div class="cart" id="cart">
-      <h3>Cart</h3>
+      <h3>Cart (<span id="itemCount">0</span> items)</h3>
       <div class="cart-list" id="cartList"></div>
       <div id="total" class="small" style="font-weight:800;margin-bottom:8px"></div>
 
-      <!-- PayPal Buttons placeholder -->
+      <!-- Checkout button + PayPal -->
+      <button id="checkoutBtn" class="primary" style="width:100%; margin-bottom:10px;">Checkout</button>
       <div id="paypal-buttons"></div>
 
       <div style="margin-top:8px; display:flex; gap:8px;">
         <button id="clearCart">Clear</button>
         <button id="exportCart">Export Order</button>
       </div>
-      <div class="footer-note" style="margin-top:10px;">
-        Note: This demo uses client-side PayPal for testing only. For production, implement server-side order creation & webhooks.
-      </div>
     </div>
   </div>
 
 <script>
-/* ==========================
-   CONFIG
-   ========================== */
-const PAYPAL_CLIENT_ID = 'https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD'; // <<< replace with your PayPal client id (sandbox or live)
-const PRODUCTS_FILE = './products.json'; // put products.json next to index.html
-const COLS = 4;
+const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID'; 
+const PRODUCTS_FILE = './products.json'; 
+const COLS = 3;
 
-/* ==========================
-   State
-   ========================== */
-let products = []; // loaded from products.json or localStorage fallback
+let products = []; 
 let filtered = [];
 let page = 1;
-let rows = 25; // rows per page
+let rows = 25; 
 let cart = loadCart();
 
-/* ==========================
-   Init
-   ========================== */
 document.getElementById('rowsPerPage').value = rows;
 document.getElementById('rowsPerPage').addEventListener('change', e=>{
   rows = parseInt(e.target.value,10);
   page = 1; render();
 });
-document.getElementById('search').addEventListener('input', ()=>{
-  page = 1; render();
-});
+document.getElementById('search').addEventListener('input', ()=>{ page = 1; render(); });
 document.getElementById('prev').addEventListener('click', ()=>{ if(page>1) page--; render(); });
 document.getElementById('next').addEventListener('click', ()=>{ page++; render(); });
 document.getElementById('clearCart').addEventListener('click', ()=>{ cart = []; saveCart(); renderCart(); });
 document.getElementById('exportCart').addEventListener('click', exportOrder);
+document.getElementById('checkoutBtn').addEventListener('click', ()=>{ 
+  if(cart.length===0) return alert("Cart empty!");
+  renderPayPalButtons();
+});
 
 fetchProducts();
 
-/* ==========================
-   Functions
-   ========================== */
-
 async function fetchProducts(){
-  // Try to load from localStorage (admin edits) first
-  const local = localStorage.getItem('lakspices_products');
-  if(local){
-    products = JSON.parse(local);
-    afterProductsLoad();
-    // still try to fetch products.json to show how to update repo
-    try { const resp = await fetch(PRODUCTS_FILE); if(resp.ok){ const remote = await resp.json(); /* optionally merge */ } } catch(e){}
-    return;
-  }
-
   try{
     const res = await fetch(PRODUCTS_FILE, {cache:'no-cache'});
-    if(!res.ok) throw new Error('products.json not found');
-    products = await res.json();
-    afterProductsLoad();
-  }catch(err){
-    console.error('Failed to load products.json', err);
-    // fallback to empty sample
-    products = [];
-    afterProductsLoad();
-  }
-}
-
-function afterProductsLoad(){
+    products = res.ok ? await res.json() : [];
+  }catch(e){ products=[]; }
   filtered = products.slice();
   render();
   renderCart();
-  renderPayPalButtons();
 }
 
 function searchFilter(){
   const q = document.getElementById('search').value.trim().toLowerCase();
-  if(!q) filtered = products.slice();
-  else filtered = products.filter(p=> (p.name||'').toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q) || (p.sku||'').toLowerCase().includes(q));
+  filtered = !q ? products.slice() : products.filter(p=>
+    (p.name||'').toLowerCase().includes(q) ||
+    (p.description||'').toLowerCase().includes(q) ||
+    (p.sku||'').toLowerCase().includes(q)
+  );
 }
 
 function render(){
@@ -170,8 +138,6 @@ function render(){
   const perPage = rows * COLS;
   const start = (page-1) * perPage;
   const pageItems = filtered.slice(start, start + perPage);
-
-  // if page overflows: clamp
   const maxPage = Math.max(1, Math.ceil(filtered.length / perPage));
   if(page > maxPage) page = maxPage;
 
@@ -189,58 +155,40 @@ function render(){
       </div>
       <div class="card-footer">
         <div style="flex:1"><button id="add-${p.id}" ${p.stock===0?'disabled':''}>Add to cart</button></div>
-        <div><button onclick="showDetails(${p.id})">View</button></div>
       </div>
     `;
     grid.appendChild(card);
     if(p.stock>0) document.getElementById(`add-${p.id}`).addEventListener('click', ()=> addToCart(p.id));
   }
 
-  // page info
-  const pageInfo = document.getElementById('pageInfo');
-  pageInfo.textContent = `Page ${page} / ${Math.max(1,Math.ceil(filtered.length / (rows*COLS)))} — showing ${Math.min(filtered.length-start, perPage)} of ${filtered.length}`;
-  // controls enable/disable
+  document.getElementById('pageInfo').textContent = `Page ${page} / ${maxPage} — showing ${Math.min(filtered.length-start, perPage)} of ${filtered.length}`;
   document.getElementById('prev').disabled = page <= 1;
-  document.getElementById('next').disabled = page >= Math.ceil(filtered.length / perPage);
+  document.getElementById('next').disabled = page >= maxPage;
 }
 
 /* Cart functions */
-function loadCart(){
-  try{ return JSON.parse(localStorage.getItem('lakspices_cart')||'[]'); }catch(e){ return []; }
-}
+function loadCart(){ try{ return JSON.parse(localStorage.getItem('lakspices_cart')||'[]'); }catch(e){ return []; } }
 function saveCart(){ localStorage.setItem('lakspices_cart', JSON.stringify(cart)); }
 function addToCart(id){
-  const p = products.find(x=>x.id===id);
-  if(!p) return alert('Product not found');
-  if(p.stock <= 0) return alert('Product not available');
+  const p = products.find(x=>x.id===id); if(!p) return;
+  if(p.stock <= 0) return;
   const it = cart.find(c=>c.id===id);
-  if(it){
-    if(it.qty + 1 > p.stock) return alert('Not enough stock');
-    it.qty++;
-  } else cart.push({id:id, name:p.name, price_cents:p.price_cents, qty:1});
-  saveCart();
-  renderCart();
-}
-function incQty(id){
-  const it = cart.find(c=>c.id===id); if(!it) return;
-  const p = products.find(x=>x.id===id);
-  if(it.qty+1 > p.stock) return alert('Not enough stock');
-  it.qty++; saveCart(); renderCart();
-}
-function decQty(id){
-  const it = cart.find(c=>c.id===id); if(!it) return;
-  it.qty--; if(it.qty<=0) cart = cart.filter(x=>x.id!==id);
+  if(it){ if(it.qty+1 > p.stock) return; it.qty++; } 
+  else cart.push({id:id, name:p.name, price_cents:p.price_cents, qty:1});
   saveCart(); renderCart();
 }
+function incQty(id){ const it = cart.find(c=>c.id===id); if(!it) return; const p = products.find(x=>x.id===id); if(it.qty+1 > p.stock) return; it.qty++; saveCart(); renderCart(); }
+function decQty(id){ const it = cart.find(c=>c.id===id); if(!it) return; it.qty--; if(it.qty<=0) cart = cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
 function removeItem(id){ cart = cart.filter(x=>x.id!==id); saveCart(); renderCart(); }
 
 function renderCart(){
   const elm = document.getElementById('cartList'); elm.innerHTML = '';
-  let totalCents = 0;
+  let totalCents = 0, itemCount = 0;
   for(const it of cart){
     const row = document.createElement('div'); row.className='cart-item';
     const p = products.find(x=>x.id===it.id) || {};
     totalCents += (it.price_cents||p.price_cents||0) * it.qty;
+    itemCount += it.qty;
     row.innerHTML = `
       <div style="flex:1">
         <div style="font-weight:700">${escapeHtml(it.name)}</div>
@@ -257,17 +205,10 @@ function renderCart(){
     elm.appendChild(row);
   }
   document.getElementById('total').textContent = 'Total: $' + (totalCents/100).toFixed(2);
-  renderPayPalButtons(); // re-render buttons so createOrder uses updated cart
+  document.getElementById('itemCount').textContent = itemCount;
 }
 
-/* Details quick modal (simple) */
-function showDetails(id){
-  const p = products.find(x=>x.id===id);
-  if(!p) return;
-  alert(`${p.name}\n\n${p.description||''}\n\nPrice: $${(p.price_cents/100).toFixed(2)}\nStock: ${p.stock}`);
-}
-
-/* Export order (download JSON) */
+/* Export order */
 function exportOrder(){
   if(cart.length===0) return alert('Cart empty');
   const payload = { date: new Date().toISOString(), items: cart, total_cents: cart.reduce((s,i)=>s+(i.price_cents*i.qty),0) };
@@ -277,270 +218,49 @@ function exportOrder(){
   URL.revokeObjectURL(url);
 }
 
-/* ===== PayPal Smart Buttons (client-side createOrder) =====
-   NOTE: This is only for quick testing. For production create orders on your server.
-*/
+/* PayPal Smart Buttons */
 function renderPayPalButtons(){
   const container = document.getElementById('paypal-buttons');
   container.innerHTML = '';
   if(!PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID.includes('YOUR')) {
-    container.innerHTML = '<div class="small" style="color:#a00">Replace YOUR_PAYPAL_CLIENT_ID in the HTML to enable PayPal buttons.</div>';
+    container.innerHTML = '<div class="small" style="color:#a00">Set your PAYPAL_CLIENT_ID to enable checkout.</div>';
     return;
   }
-
-  // load PayPal script if not loaded
   if(!window.paypal){
     const script = document.createElement('script');
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD&components=buttons,hosted-fields`;
     script.onload = () => renderPayPalButtons();
     document.head.appendChild(script);
     return;
   }
-
-  // compute items for PayPal purchase_units
   const items = cart.map(it=>{
     const p = products.find(x=>x.id===it.id) || {};
     return {
       name: p.name || it.name,
       unit_amount: { currency_code: 'USD', value: ((it.price_cents||p.price_cents)/100).toFixed(2) },
-      quantity: String(it.qty),
-      sku: p.sku || String(it.id)
+      quantity: String(it.qty)
     };
   });
   const total = items.reduce((s,i)=> s + (parseFloat(i.unit_amount.value) * parseInt(i.quantity)), 0).toFixed(2);
 
   window.paypal.Buttons({
-    style:{layout:'vertical', color:'gold', shape:'rect', label:'paypal'},
-    createOrder: function(data, actions){
-      if(cart.length===0) { alert('Cart is empty'); return; }
-      // in production: call server to create order; here we create client-side for demo
+    style:{ layout:'vertical', color:'gold', shape:'rect', label:'paypal' },
+    createOrder:(data, actions)=>{
       return actions.order.create({
-        purchase_units: [{
-          amount: {
-            currency_code: 'USD',
-            value: total,
-            breakdown: { item_total: { currency_code: 'USD', value: total } }
-          },
+        purchase_units:[{
+          amount:{ currency_code:'USD', value:total, breakdown:{ item_total:{ currency_code:'USD', value:total } } },
           items
         }]
       });
     },
-    onApprove: function(data, actions){
-      return actions.order.capture().then(function(details){
-        // In production: notify server to decrement stock using secure webhook/capture-confirmation
-        // For demo: decrement product stock client-side (localStorage) and clear cart
-        for(const it of cart){
-          const p = products.find(x=>x.id===it.id);
-          if(p) p.stock = Math.max(0, p.stock - it.qty);
-        }
-        localStorage.setItem('lakspices_products', JSON.stringify(products));
-        cart = [];
-        saveCart();
-        render();
-        renderCart();
-        alert('Payment successful — thank you! Transaction: ' + (details.id || 'unknown'));
-      });
-    },
-    onError: function(err){ console.error('PayPal error', err); alert('PayPal error: '+err); }
+    onApprove:(data, actions)=> actions.order.capture().then(details=>{
+      cart=[]; saveCart(); renderCart(); render();
+      alert('Payment successful: ' + details.id);
+    })
   }).render('#paypal-buttons');
 }
 
-/* ==========================
-   Utils
-   ========================== */
 function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
 </script>
-</body>
-</html><!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <title>LAKSPICES LLC — Spice Store</title>
-  <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      margin: 20px;
-    }
-    h1 { margin-bottom: 20px; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
-    .card {
-      border: 1px solid #ddd;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      background: #fafafa;
-    }
-    .card img {
-      max-width: 100%;
-      height: 140px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-    .price {
-      font-weight: 700;
-      margin-top: 8px;
-    }
-    .notavail {
-      color: #b00;
-      font-weight: 700;
-    }
-    .cart {
-      position: fixed;
-      right: 20px;
-      top: 20px;
-      width: 280px;
-      border: 1px solid #ddd;
-      padding: 12px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    .cart h3 { margin-top: 0; }
-    .cart-item {
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
-    .cart-item button {
-      margin-left: 3px;
-    }
-    button {
-      padding: 6px 10px;
-      margin-top: 6px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      background: #0070ba;
-      color: #fff;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #888;
-    }
-  </style>
-</head>
-<body>
-  <h1>Welcome to LAKSPICES LLC</h1>
-  <p>Premium spices like chilies, cardamom, pepper & more!</p>
-
-  <div id="grid" class="grid"></div>
-
-  <div class="cart" id="cartbox">
-    <h3>Your Cart</h3>
-    <div id="cartitems"></div>
-    <div id="total"></div>
-    <!-- PayPal Buttons appear here -->
-    <div id="paypal-button-container"></div>
-  </div>
-
-  <!-- PayPal SDK with your client ID -->
-  <script src="https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD"></script>
-
-  <script>
-    // --- Static product list (expand this to 200 spices) ---
-    let products = [
-      {id:1, name:"Red Chilies", description:"Hot dried red chilies", price_cents:299, stock:10, image_url:"https://via.placeholder.com/200?text=Red+Chilies"},
-      {id:2, name:"Cardamom", description:"Green cardamom pods", price_cents:499, stock:8, image_url:"https://via.placeholder.com/200?text=Cardamom"},
-      {id:3, name:"Black Pepper", description:"Whole black peppercorns", price_cents:399, stock:15, image_url:"https://via.placeholder.com/200?text=Black+Pepper"},
-      {id:4, name:"Cinnamon", description:"Ceylon cinnamon sticks", price_cents:599, stock:5, image_url:"https://via.placeholder.com/200?text=Cinnamon"}
-    ];
-
-    const cart = [];
-
-    function renderGrid(){
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      for(const p of products){
-        const el = document.createElement('div'); 
-        el.className='card';
-        el.innerHTML = `
-          <img src="${p.image_url}" alt="${p.name}">
-          <h4>${p.name}</h4>
-          <div>${p.description||''}</div>
-          <div class="price">$${(p.price_cents/100).toFixed(2)}</div>
-          <div>${p.stock>0? ('In stock: '+p.stock) : '<span class="notavail">Not available</span>'}</div>
-          <button id="add-${p.id}" ${p.stock===0?'disabled':''}>Add to cart</button>
-        `;
-        grid.appendChild(el);
-        if(p.stock>0){
-          document.getElementById(`add-${p.id}`).addEventListener('click', ()=> addToCart(p.id));
-        }
-      }
-    }
-
-    function addToCart(id){
-      const prod = products.find(x=>x.id===id);
-      if(!prod || prod.stock===0){ alert('Not available'); return; }
-      const item = cart.find(c=>c.id===id);
-      if(item){
-        if(item.qty+1 > prod.stock){ alert('Not enough stock'); return;}
-        item.qty++;
-      } else cart.push({id:id, name:prod.name, price_cents: prod.price_cents, qty:1});
-      renderCart();
-    }
-
-    function renderCart(){
-      const box = document.getElementById('cartitems');
-      box.innerHTML = '';
-      let totalCents = 0;
-      for(const it of cart){
-        totalCents += it.price_cents * it.qty;
-        const div = document.createElement('div');
-        div.className = 'cart-item';
-        div.innerHTML = `${it.name} x ${it.qty} — $${(it.price_cents/100).toFixed(2)} each
-          <button onclick="dec(${it.id})">-</button>
-          <button onclick="inc(${it.id})">+</button>`;
-        box.appendChild(div);
-      }
-      document.getElementById('total').innerText = 'Total: $' + (totalCents/100).toFixed(2);
-    }
-
-    function inc(id){
-      const it=cart.find(c=>c.id===id); 
-      const p=products.find(x=>x.id===id); 
-      if(it.qty+1>p.stock){alert('No more stock');return;} 
-      it.qty++; renderCart();
-    }
-    function dec(id){ 
-      const it=cart.find(c=>c.id===id); 
-      if(!it)return; 
-      it.qty--; 
-      if(it.qty<=0) cart.splice(cart.indexOf(it),1); 
-      renderCart(); 
-    }
-
-    // --- PayPal Smart Buttons (client-side only demo) ---
-    paypal.Buttons({
-      createOrder: (data, actions) => {
-        let total = 0;
-        for(const it of cart){ total += it.price_cents * it.qty; }
-        return actions.order.create({
-          purchase_units: [{
-            amount: { value: (total/100).toFixed(2) }
-          }]
-        });
-      },
-      onApprove: async (data, actions) => {
-        const order = await actions.order.capture();
-        alert("Payment successful! Thank you " + order.payer.name.given_name);
-        cart.length = 0;
-        renderCart();
-      },
-      onError: (err) => {
-        console.error(err);
-        alert("PayPal error: " + err.message);
-      }
-    }).render('#paypal-button-container');
-
-    window.inc = inc; 
-    window.dec = dec;
-
-    renderGrid();
-    renderCart();
-  </script>
 </body>
 </html>
