@@ -44,9 +44,10 @@
     <button id="backToShop">Back to Shop</button>
   </div>
 
-  <script>
-    const PAYPAL_CLIENT_ID = "YOUR_PAYPAL_CLIENT_ID_HERE"; // replace with your valid client ID
+  <!-- ✅ Load PayPal SDK with your client ID -->
+  <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID_HERE&currency=USD"></script>
 
+  <script>
     const products = [
       {id:1, name:"Red Chili", price:299, stock:10, image:"https://via.placeholder.com/200?text=Chili"},
       {id:2, name:"Black Pepper", price:399, stock:8, image:"https://via.placeholder.com/200?text=Pepper"},
@@ -123,14 +124,6 @@
       const container = document.getElementById("paypalButtons");
       container.innerHTML="";
       if(cart.length===0) return;
-
-      if(!window.paypal){
-        const script = document.createElement("script");
-        script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
-        script.onload = ()=>renderPayPal(totalCents);
-        document.head.appendChild(script);
-        return;
-      }
 
       paypal.Buttons({
         createOrder: (data, actions) => {
