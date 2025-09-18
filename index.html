@@ -5,402 +5,160 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>LAKSPICES LLC — Shop</title>
   <style>
-    :root { --card-pad:12px; --cols:4; --page-width:1200px; }
-    body { font-family:Inter, system-ui, Arial, sans-serif; margin:20px; display:flex; justify-content:center; }
-    .wrap { max-width:var(--page-width); width:100%; }
-    header { display:flex; align-items:center; justify-content:space-between; position:relative; }
-    h1 { margin:0 0 12px 0; font-size:24px; }
-    .controls { display:flex; gap:8px; align-items:center; }
-    .grid { display:grid; grid-template-columns: repeat(var(--cols), 1fr); gap:16px; margin-top:18px; }
-    .card { border:1px solid #e6e6e6; border-radius:8px; padding:var(--card-pad); background:#fff; display:flex; flex-direction:column; height:100%; }
+    body { font-family: Arial, sans-serif; margin:20px; }
+    header { display:flex; justify-content:space-between; align-items:center; }
+    h1 { margin:0; }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:20px; }
+    .card { border:1px solid #ccc; border-radius:8px; padding:12px; background:#fff; }
     .card img { width:100%; height:160px; object-fit:cover; border-radius:6px; }
-    .meta { margin-top:8px; flex:1; }
-    .title { font-weight:700; }
-    .desc { font-size:13px; color:#444; margin-top:6px; }
-    .price { font-weight:800; margin-top:8px; }
-    .stock { margin-top:6px; }
-    .notavail { color:#b00000; font-weight:700; }
-    .card-footer { display:flex; gap:8px; align-items:center; margin-top:10px; }
-    button { cursor:pointer; padding:8px 10px; border-radius:6px; border:1px solid #ccc; background:#f7f7f7; }
-    button.primary { background:#1a73e8; color:white; border-color:#1669c1; }
-    button:disabled { opacity:0.5; cursor:not-allowed; }
-    .cart-icon {
-      position: absolute;
-      right: 20px;
-      top: 20px;
-      cursor: pointer;
-      font-size: 24px;
-    }
-    .cart-icon .badge {
-      background: red;
-      color: white;
-      border-radius: 50%;
-      padding: 2px 6px;
-      font-size: 14px;
-      vertical-align: top;
-      margin-left: -10px;
-      margin-top: -10px;
-      position: absolute;
-    }
-    .cart-popup {
-      position: fixed;
-      right: 20px;
-      top: 60px;
-      width: 320px;
-      max-height: 80%;
-      overflow-y: auto;
-      border:1px solid #e6e6e6;
-      background:white;
-      border-radius:8px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
-      padding:12px;
-      display: none;
-      z-index: 1000;
-    }
-    .cart-popup.visible { display: block; }
-    .cart-list { margin-bottom:12px; }
-    .cart-item { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:6px 0; border-bottom:1px dashed #eee; }
-    .small { font-size:13px; color:#555; }
-    .total-line { font-weight:800; margin-bottom:12px; }
-    .footer-note { margin-top:14px; font-size:13px; color:#666; }
-    @media (max-width:1000px) {
-      .grid { grid-template-columns: repeat(2,1fr); }
-    }
+    .title { font-weight:700; margin-top:8px; }
+    .price { margin-top:6px; font-weight:bold; }
+    .cart-icon { cursor:pointer; font-size:24px; position:relative; }
+    .badge { background:red; color:white; border-radius:50%; padding:2px 6px; font-size:14px; position:absolute; top:-8px; right:-12px; }
+    .cart-view { display:none; margin-top:20px; }
+    .cart-item { border-bottom:1px solid #eee; padding:8px 0; display:flex; justify-content:space-between; }
+    .total { margin-top:12px; font-weight:bold; }
+    button { margin-top:8px; padding:6px 10px; cursor:pointer; }
+    button.primary { background:#1a73e8; color:white; border:none; border-radius:6px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>LAKSPICES LLC — Spices Store</h1>
-        <div class="footer-note">Grid: 4 items per row. Adjust rows/page below.</div>
-      </div>
+  <header>
+    <h1>LAKSPICES LLC — Spices Store</h1>
+    <div class="cart-icon" id="cartIcon">
+      🛒 <span class="badge" id="cartBadge">0</span>
+    </div>
+  </header>
 
-      <div class="controls">
-        <label class="small">Rows per page:
-          <select id="rowsPerPage">
-            <option value="5">5</option><option value="10">10</option><option value="20">20</option>
-            <option value="25" selected>25</option><option value="50">50</option>
-          </select>
-        </label>
+  <!-- Products Grid -->
+  <main id="productView">
+    <div id="grid" class="grid"></div>
+  </main>
 
-        <label class="small">Search:
-          <input id="search" placeholder="name or desc" />
-        </label>
-      </div>
-
-      <div class="cart-icon" id="cartIcon">
-        🛒 <span class="badge" id="cartBadge">0</span>
-      </div>
-    </header>
-
-    <main>
-      <div id="grid" class="grid" aria-live="polite"></div>
-      <div class="pager" id="pager">
-        <button id="prev">Prev</button>
-        <div id="pageInfo" class="small"></div>
-        <button id="next">Next</button>
-      </div>
-    </main>
-  </div>
-
-  <div class="cart-popup" id="cartPopup">
-    <h3>Your Cart</h3>
-    <div class="cart-list" id="cartList"></div>
-    <div class="total-line" id="cartTotal"></div>
-    <div id="paypalButtonsContainer"></div>
-    <button id="payAllNow" class="primary">Pay All Now</button>
-    <button id="closeCart">Close</button>
+  <!-- Cart View -->
+  <div id="cartView" class="cart-view">
+    <h2>Your Cart</h2>
+    <div id="cartList"></div>
+    <div class="total" id="cartTotal"></div>
+    <div id="paypalButtons"></div>
+    <button id="backToShop">Back to Shop</button>
   </div>
 
   <script>
-    const PAYPAL_CLIENT_ID = 'YOUR_PAYPAL_CLIENT_ID_HERE';  // replace with your valid ID
-    const PRODUCTS_FILE = './products.json';
-    const COLS = 4;
+    const PAYPAL_CLIENT_ID = "YOUR_PAYPAL_CLIENT_ID_HERE"; // replace with your valid client ID
 
-    let products = [];
-    let filtered = [];
-    let page = 1;
-    let rows = 25;
-    let cart = loadCart();  // array of {id, name, price_cents, qty}
+    const products = [
+      {id:1, name:"Red Chili", price:299, stock:10, image:"https://via.placeholder.com/200?text=Chili"},
+      {id:2, name:"Black Pepper", price:399, stock:8, image:"https://via.placeholder.com/200?text=Pepper"},
+      {id:3, name:"Cardamom", price:499, stock:5, image:"https://via.placeholder.com/200?text=Cardamom"},
+      {id:4, name:"Cinnamon", price:350, stock:12, image:"https://via.placeholder.com/200?text=Cinnamon"}
+    ];
 
-    // Initialize
-    document.getElementById('rowsPerPage').value = rows;
-    document.getElementById('rowsPerPage').addEventListener('change', e => {
-      rows = parseInt(e.target.value,10);
-      page = 1;
-      renderGrid();
-    });
-    document.getElementById('search').addEventListener('input', e => {
-      page = 1;
-      renderGrid();
-    });
-    document.getElementById('prev').addEventListener('click', e => {
-      if(page > 1) { page--; renderGrid(); }
-    });
-    document.getElementById('next').addEventListener('click', e => {
-      page++;
-      renderGrid();
-    });
-    document.getElementById('cartIcon').addEventListener('click', toggleCartPopup);
-    document.getElementById('closeCart').addEventListener('click', toggleCartPopup);
+    let cart = [];
 
-    document.getElementById('payAllNow').addEventListener('click', payAllNow);
-
-    fetchProducts();
-
-    // ===== Functions =====
-
-    async function fetchProducts(){
-      try {
-        const resp = await fetch(PRODUCTS_FILE, { cache: 'no-cache' });
-        if(!resp.ok) throw new Error('products.json not found');
-        products = await resp.json();
-      } catch(err) {
-        console.error('Error loading products.json', err);
-        products = [];
-      }
-      filtered = products.slice();
-      renderGrid();
-      updateCartBadge();
-    }
-
-    function renderGrid(){
-      searchFilter();
-      const perPage = rows * COLS;
-      const start = (page - 1) * perPage;
-      const pageItems = filtered.slice(start, start + perPage);
-      const maxPage = Math.max(1, Math.ceil(filtered.length / perPage));
-      if(page > maxPage) page = maxPage;
-
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      for(const p of pageItems){
-        const card = document.createElement('div');
-        card.className = 'card';
+    function renderProducts(){
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+      products.forEach(p=>{
+        const card = document.createElement("div");
+        card.className="card";
         card.innerHTML = `
-          <img loading="lazy" src="${p.image_url || 'https://via.placeholder.com/400x260?text=No+Image'}" alt="${escapeHtml(p.name||'')}">
-          <div class="meta">
-            <div class="title">${escapeHtml(p.name||'Unnamed')}</div>
-            <div class="desc">${escapeHtml(p.description||'')}</div>
-            <div class="price">$${(p.price_cents/100).toFixed(2)}</div>
-            <div class="stock">${p.stock > 0 ? 'In stock: '+ p.stock : '<span class="notavail">Out of stock</span>'}</div>
-          </div>
-          <div class="card-footer">
-            <button id="add-${p.id}" ${p.stock <= 0 ? 'disabled' : ''}>Add to cart</button>
-          </div>
+          <img src="${p.image}" alt="${p.name}">
+          <div class="title">${p.name}</div>
+          <div class="price">$${(p.price/100).toFixed(2)}</div>
+          <button ${p.stock<=0?"disabled":""}>Add to Cart</button>
         `;
+        card.querySelector("button").onclick = ()=>addToCart(p.id);
         grid.appendChild(card);
-
-        if(p.stock > 0){
-          document.getElementById(`add-${p.id}`).addEventListener('click', () => {
-            addToCart(p.id);
-          });
-        }
-      }
-
-      document.getElementById('pageInfo').textContent = `Page ${page} / ${Math.max(1, Math.ceil(filtered.length/(rows*COLS)))} — showing ${Math.min(filtered.length - (page-1)*rows*COLS, rows*COLS)} of ${filtered.length}`;
-    }
-
-    function searchFilter(){
-      const q = document.getElementById('search').value.trim().toLowerCase();
-      if(!q) filtered = products.slice();
-      else filtered = products.filter(p =>
-        (p.name||'').toLowerCase().includes(q)
-        || (p.description||'').toLowerCase().includes(q)
-        || (p.sku||'').toLowerCase().includes(q)
-      );
+      });
     }
 
     function addToCart(id){
-      const p = products.find(x=>x.id === id);
-      if(!p) { alert('Product not found'); return; }
-      if(p.stock <= 0) { alert('Not available'); return; }
-
-      let it = cart.find(c => c.id === id);
-      if(it){
-        if(it.qty + 1 > p.stock){
-          alert('Not enough stock');
-          return;
-        }
-        it.qty++;
+      const product = products.find(p=>p.id===id);
+      if(!product || product.stock<=0) return;
+      let item = cart.find(c=>c.id===id);
+      if(item){
+        if(item.qty < product.stock) item.qty++;
       } else {
-        cart.push({ id: id, name: p.name, price_cents: p.price_cents, qty: 1 });
+        cart.push({id:product.id, name:product.name, price:product.price, qty:1});
       }
-      saveCart();
-      updateCartBadge();
+      updateBadge();
     }
 
-    function loadCart(){
-      try {
-        const c = JSON.parse(localStorage.getItem('lakspices_cart') || '[]');
-        return c;
-      } catch(e){
-        return [];
-      }
-    }
-    function saveCart(){
-      localStorage.setItem('lakspices_cart', JSON.stringify(cart));
+    function updateBadge(){
+      const totalQty = cart.reduce((s,i)=>s+i.qty,0);
+      document.getElementById("cartBadge").textContent = totalQty;
     }
 
-    function updateCartBadge(){
-      const totalQty = cart.reduce((sum, it) => sum + it.qty, 0);
-      document.getElementById('cartBadge').textContent = totalQty;
+    function showCart(){
+      document.getElementById("productView").style.display="none";
+      document.getElementById("cartView").style.display="block";
+      renderCart();
     }
 
-    function toggleCartPopup(){
-      const popup = document.getElementById('cartPopup');
-      popup.classList.toggle('visible');
-      if(popup.classList.contains('visible')){
-        renderCartPopup();
-      }
+    function backToShop(){
+      document.getElementById("cartView").style.display="none";
+      document.getElementById("productView").style.display="block";
     }
 
-    function renderCartPopup(){
-      const listEl = document.getElementById('cartList');
-      listEl.innerHTML = '';
-      let totalCents = 0;
-
-      if(cart.length === 0){
-        listEl.innerHTML = '<div class="small">Cart is empty</div>';
-        document.getElementById('cartTotal').textContent = '';
-        document.getElementById('paypalButtonsContainer').innerHTML = '';
-        document.getElementById('payAllNow').disabled = true;
-        return;
-      }
-
-      cart.forEach(it => {
-        const p = products.find(x=>x.id === it.id) || {};
-        const row = document.createElement('div');
-        row.className = 'cart-item';
+    function renderCart(){
+      const list = document.getElementById("cartList");
+      list.innerHTML="";
+      let total=0;
+      cart.forEach(it=>{
+        const row = document.createElement("div");
+        row.className="cart-item";
         row.innerHTML = `
-          <div style="flex:1;">
-            <div style="font-weight:700;">${escapeHtml(it.name)}</div>
-            <div class="small">${it.qty} × $${( (it.price_cents)/100 ).toFixed(2)}</div>
-          </div>
-          <div>
-            <button onclick="removeCartItem(${it.id})">Remove</button>
-          </div>
+          <div>${it.name} (x${it.qty})</div>
+          <div>$${((it.price*it.qty)/100).toFixed(2)}</div>
         `;
-        listEl.appendChild(row);
-        totalCents += it.price_cents * it.qty;
+        list.appendChild(row);
+        total += it.price*it.qty;
       });
-
-      document.getElementById('cartTotal').textContent = 'Total: $' + (totalCents/100).toFixed(2);
-      document.getElementById('payAllNow').disabled = false;
-
-      // Render PayPal buttons inside popup if you want inline pay, or rely on "Pay All Now"
-      // Let's render a small inline PayPal button too
-      renderPayPalButtonsInline(totalCents);
+      document.getElementById("cartTotal").textContent="Total: $"+(total/100).toFixed(2);
+      renderPayPal(total);
     }
 
-    function removeCartItem(id){
-      cart = cart.filter(it => it.id !== id);
-      saveCart();
-      updateCartBadge();
-      renderCartPopup();
-    }
-
-    function payAllNow(){
-      // Use PayPal Buttons to trigger the checkout for whole cart
-      // We can reuse the inline buttons or redirect; here we open PayPal Buttons in same container
-      // For simplicity, show inline PayPal Buttons in popup and automatically click.
-
-      // Or redirect to PayPal checkout via actions/order.create from smart buttons
-      // We'll show a PayPal button where user must click, not auto-click
-
-      // (Do nothing here if inline PayPal button is present)
-      alert('Please click “Pay with PayPal” button below to complete purchase.');
-    }
-
-    function renderPayPalButtonsInline(totalCents){
-      const container = document.getElementById('paypalButtonsContainer');
-      container.innerHTML = '';
-
-      if(!PAYPAL_CLIENT_ID || PAYPAL_CLIENT_ID === 'YOUR_PAYPAL_CLIENT_ID_HERE'){
-        container.innerHTML = '<div class="small" style="color: red;">Set a valid PayPal Client ID.</div>';
-        return;
-      }
+    function renderPayPal(totalCents){
+      const container = document.getElementById("paypalButtons");
+      container.innerHTML="";
+      if(cart.length===0) return;
 
       if(!window.paypal){
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`;
-        script.onload = () => renderPayPalButtonsInline(totalCents);
+        script.onload = ()=>renderPayPal(totalCents);
         document.head.appendChild(script);
         return;
       }
 
-      // Build items for PayPal
-      const items = cart.map(it => {
-        return {
-          name: it.name,
-          unit_amount: { currency_code: 'USD', value: (it.price_cents/100).toFixed(2) },
-          quantity: String(it.qty),
-          sku: String(it.id)
-        };
-      });
-
-      const total = (items.reduce((sum,i) => sum + (parseFloat(i.unit_amount.value) * parseInt(i.quantity)), 0)).toFixed(2);
-
-      // Remove any existing buttons to avoid duplicates
-      container.innerHTML = '';
       paypal.Buttons({
-        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
         createOrder: (data, actions) => {
-          if(cart.length === 0){
-            alert('Cart is empty.');
-            throw new Error('Cart is empty.');
-          }
           return actions.order.create({
             purchase_units: [{
-              amount: {
-                currency_code: 'USD',
-                value: total,
-                breakdown: {
-                  item_total: { currency_code: 'USD', value: total }
-                }
-              },
-              items: items
+              amount: { currency_code:"USD", value:(totalCents/100).toFixed(2) }
             }]
           });
         },
         onApprove: (data, actions) => {
-          return actions.order.capture().then(details => {
-            // After successful payment:
-            // 1. Reduce stock
-            for(const it of cart){
-              const p = products.find(x=>x.id === it.id);
-              if(p){
-                p.stock = Math.max(0, p.stock - it.qty);
-              }
-            }
-            // 2. Clear cart
-            cart = [];
-            saveCart();
-            updateCartBadge();
-
-            // 3. Hide cart view
-            toggleCartPopup();
-
-            // 4. Re-render grid to update stock
-            renderGrid();
-
-            alert('Payment successful! Transaction ID: ' + (details.id || 'unknown'));
+          return actions.order.capture().then(details=>{
+            alert("Payment successful, Thank you!");
+            cart=[];
+            updateBadge();
+            backToShop();
+            renderProducts();
           });
-        },
-        onError: err => {
-          console.error('PayPal error', err);
-          alert('Payment error: ' + err);
         }
-      }).render('#paypalButtonsContainer');
+      }).render("#paypalButtons");
     }
 
-    function escapeHtml(s){
-      return String(s || '').replace(/[&<>"']/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-      })[c]);
-    }
+    // Event Listeners
+    document.getElementById("cartIcon").onclick=showCart;
+    document.getElementById("backToShop").onclick=backToShop;
 
+    // Init
+    renderProducts();
+    updateBadge();
   </script>
 </body>
 </html>
