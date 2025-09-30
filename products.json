@@ -6,7 +6,7 @@
     "description": "Hot dried red chilies, aromatic and fresh.",
     "price_cents": 350,
     "image_url": "https://images.unsplash.com/photo-1542444459-db7c5f2c6b0a?w=800&q=60",
-    "stock": 10
+    "stock": 30
   },
   {
     "id": 2,
@@ -15,7 +15,7 @@
     "description": "Premium green cardamom pods, perfect for sweets and curries.",
     "price_cents": 999,
     "image_url": "https://images.unsplash.com/photo-1600180758890-9d4f86d3e3d7?w=800&q=60",
-    "stock": 10
+    "stock": 40
   },
   {
     "id": 3,
