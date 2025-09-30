@@ -129,7 +129,7 @@ document.getElementById('checkoutBtn').addEventListener('click', async ()=>{
   });
 
   const session = await res.json();
-  const stripe = Stripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+  const stripe = Stripe('sk_test_51S54lkAUcFfJkzdRvS0aggYwprMHbiatiTOWmlSeKEmrUQ8LjYyYVyt00pRIUD5iYrnwRFUsFFVK7EHXL90mmf1n00lUVn4kSX');
   stripe.redirectToCheckout({ sessionId: session.id });
 });
 
