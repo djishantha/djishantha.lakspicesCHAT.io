@@ -42,7 +42,7 @@
 </style>
 
 <!-- PayPal SDK -->
-<script src="https://www.paypal.com/sdk/js?client-id=AXUZYpgdB2oGgzp-3hGfnY5e_Qyuqs1tokPRfPpKLehbLXRXo6PBzvnxdKJiAL3z97c46aVOk-s2yMkT&currency=USD"></script>
+<script src="https://js.stripe.com/v3/"></script>
 
 </head>
 <body>
@@ -81,7 +81,7 @@
 
     <!-- Checkout button + PayPal -->
     <button id="checkoutBtn" class="primary" style="width:100%; margin-bottom:10px;">Checkout</button>
-    <div id="paypal-buttons"></div>
+   
 
     <div style="margin-top:8px; display:flex; gap:8px;">
       <button id="clearCart">Clear</button>
@@ -108,10 +108,31 @@ document.getElementById('prev').addEventListener('click', ()=>{ if(page>1) page-
 document.getElementById('next').addEventListener('click', ()=>{ page++; render(); });
 document.getElementById('clearCart').addEventListener('click', ()=>{ cart=[]; saveCart(); renderCart(); });
 document.getElementById('exportCart').addEventListener('click', exportOrder);
-document.getElementById('checkoutBtn').addEventListener('click', ()=>{ 
+document.getElementById('checkoutBtn').addEventListener('click', async ()=>{
   if(cart.length===0) return alert("Cart empty!");
-  renderPayPalButtons();
+
+  // Prepare cart items
+  const line_items = cart.map(it => ({
+    price_data: {
+      currency: 'usd',
+      product_data: { name: it.name },
+      unit_amount: it.price_cents
+    },
+    quantity: it.qty
+  }));
+
+  // Call your backend to create Stripe Checkout Session
+  const res = await fetch('/create-checkout-session', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({ items: line_items })
+  });
+
+  const session = await res.json();
+  const stripe = Stripe('YOUR_STRIPE_PUBLISHABLE_KEY');
+  stripe.redirectToCheckout({ sessionId: session.id });
 });
+
 
 fetchProducts();
 
