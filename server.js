@@ -2,8 +2,9 @@ import express from 'express';
 import Stripe from 'stripe';
 import cors from 'cors';
 
+import cors from 'cors';
 app.use(cors({
-  origin: 'https://djishantha.github.io/djishantha.lakspicesCHAT.io'
+  origin: 'https://djishantha.github.io'  // allow your GitHub Pages domain
 }));
 
 // Replace with your actual Stripe secret key
