@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import cors from 'cors';
 
 app.use(cors({
-  origin: 'https://your-username.github.io'  // ← use your GitHub Pages URL here
+  origin: 'https://djishantha.github.io/djishantha.lakspicesCHAT.io'
 }));
 
 // Replace with your actual Stripe secret key
