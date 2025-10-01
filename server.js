@@ -1,5 +1,10 @@
 import express from 'express';
 import Stripe from 'stripe';
+import cors from 'cors';
+
+app.use(cors({
+  origin: 'https://your-username.github.io'  // ← use your GitHub Pages URL here
+}));
 
 // Replace with your actual Stripe secret key
 const stripe = new Stripe('sk_test_51S54lkAUcFfJkzdRvS0aggYwprMHbiatiTOWmlSeKEmrUQ8LjYyYVyt00pRIUD5iYrnwRFUsFFVK7EHXL90mmf1n00lUVn4kSX');
