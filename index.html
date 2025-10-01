@@ -122,11 +122,11 @@ document.getElementById('checkoutBtn').addEventListener('click', async ()=>{
   }));
 
   // Call your backend to create Stripe Checkout Session
-  const res = await fetch('http://localhost:3000/create-checkout-session', {
-    method: 'POST',
-    headers: { 'Content-Type':'application/json' },
-    body: JSON.stringify({ items: line_items })
-  });
+  const res = await fetch('https://djishantha-lakspiceschat-io.onrender.com/create-checkout-session', {
+  method: 'POST',
+  headers: { 'Content-Type':'application/json' },
+  body: JSON.stringify({ items: line_items })
+});
 
   const session = await res.json();
   const stripe = Stripe('pk_test_51S54lkAUcFfJkzdROLBPj76i7Cmk3WV4eBHDUNnVqYK0FsMNaqUKp0PKdJLuG6qAKjOqFxM4T3DOvDxVbqO6IPoA00knTOSCsZ');
